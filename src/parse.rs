@@ -250,6 +250,7 @@ pub struct Config {
 }
 
 impl Config {
+    #[must_use]
     pub fn with_assignment_delimiters(
         mut self,
         delimiters: impl IntoIterator<Item = &'static str>,
@@ -258,6 +259,7 @@ impl Config {
         self
     }
 
+    #[must_use]
     pub fn with_comment_prefixes(
         mut self,
         prefixes: impl IntoIterator<Item = &'static str>,
@@ -266,6 +268,7 @@ impl Config {
         self
     }
 
+    #[must_use]
     pub fn with_inline_comment_prefixes(
         mut self,
         prefixes: impl IntoIterator<Item = &'static str>,
@@ -323,10 +326,25 @@ impl<B> Parser<B> {
     }
 }
 
+// fn parse_comment(span: &Span, items: &mut Vec<Spanned<Item>>) -> Result<(), Error> {
+//     span.start += 1;
+//     let byte_span = to_byte_span(&line, span.clone()).add_offset(offset);
+//     println!("\t=> comment: {line}");
+//     items.push(Spanned::new(
+//         byte_span,
+//         Item::Comment {
+//             text: line[span].into(),
+//         },
+//     ));
+//     Ok(())
+// }
+
 impl<B> Parse for Parser<B>
 where
     B: std::io::BufRead,
 {
+    // TODO: refactor this to be shorter and easier
+    #[allow(clippy::too_many_lines)]
     fn parse_next(&mut self, state: &mut ParseState) -> Result<Option<Vec<Spanned<Item>>>, Error> {
         let line = self.lines.next().transpose()?;
         let Some((offset, line)) = line else {
@@ -334,8 +352,6 @@ where
         };
         let mut span = compact_span(&line, 0..line.len());
         let current_indent_level = span.start;
-
-        dbg!(&line);
 
         let mut items: Vec<Spanned<Item>> = vec![];
 
@@ -353,18 +369,17 @@ where
                     return Err(Error::Syntax(SyntaxError::InvalidSectionName {
                         span: byte_span,
                     }));
-                } else {
-                    state.current_section.clear();
-                    state.option_name = None;
-                    println!("\t=> section: {}", &line[span.clone()]);
-
-                    items.push(Spanned::new(
-                        byte_span,
-                        Item::Section {
-                            name: line[span].into(),
-                        },
-                    ));
                 }
+                state.current_section.clear();
+                state.option_name = None;
+                println!("\t=> section: {}", &line[span.clone()]);
+
+                items.push(Spanned::new(
+                    byte_span,
+                    Item::Section {
+                        name: line[span].into(),
+                    },
+                ));
             } else {
                 let byte_span = to_byte_span(&line, span.clone()).add_offset(offset);
                 return Err(Error::Syntax(SyntaxError::SectionNotClosed {
@@ -528,6 +543,7 @@ mod tests {
     };
     use color_eyre::eyre;
     use similar_asserts::assert_eq as sim_assert_eq;
+    use std::fmt::Write;
     use unindent::unindent;
 
     #[test]
@@ -1932,9 +1948,9 @@ mod tests {
 
         let mut config = String::new();
         for i in 0..2 {
-            config += &format!("[section{i}]\n");
+            writeln!(config, "[section{i}]")?;
             for j in 0..5 {
-                config += &format!("lovely_spam{j} = {wonderful_spam}\n");
+                writeln!(config, "lovely_spam{j} = {wonderful_spam}")?;
             }
         }
         let config = parse(&config, Options::default(), &Printer::default()).0?;

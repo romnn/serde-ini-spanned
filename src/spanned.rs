@@ -19,6 +19,12 @@ impl std::borrow::Borrow<str> for Spanned<String> {
     }
 }
 
+impl std::borrow::Borrow<str> for Spanned<&str> {
+    fn borrow(&self) -> &str {
+        self.inner
+    }
+}
+
 impl<T> std::ops::Deref for Spanned<T>
 where
     T: std::ops::Deref,

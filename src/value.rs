@@ -12,9 +12,12 @@ use std::hash::Hash;
 #[error("invalid boolean: {0:?}")]
 pub struct InvalidBooleanError(pub String);
 
-/// Return a boolean value translating from other types if necessary
+/// Return a boolean value translating from other types if necessary.
 ///
-/// adopted from <https://github.com/python/cpython/blob/main/Lib/configparser.py#L634>
+/// Adopted from <https://github.com/python/cpython/blob/main/Lib/configparser.py#L634>
+///
+/// # Errors
+/// When the given value is not a valid boolean.
 pub fn convert_to_boolean(value: &str) -> Result<bool, InvalidBooleanError> {
     let value = value.to_ascii_lowercase();
     match value.as_str() {
@@ -27,6 +30,7 @@ pub fn convert_to_boolean(value: &str) -> Result<bool, InvalidBooleanError> {
 pub trait ClearSpans {
     fn clear_spans(&mut self);
 
+    #[must_use]
     fn cleared_spans(mut self) -> Self
     where
         Self: Sized,
@@ -200,6 +204,10 @@ impl Section {
         self.inner.shift_remove(&key)
     }
 
+    /// Get integer value.
+    ///
+    /// # Errors
+    /// Errors if the value is not a valid integer.
     pub fn get_int(&self, key: &str) -> Result<Option<Spanned<i32>>, std::num::ParseIntError> {
         self.get(key)
             .map(|value| {
@@ -211,6 +219,10 @@ impl Section {
             .transpose()
     }
 
+    /// Get floating point value.
+    ///
+    /// # Errors
+    /// Errors if the value is not a valid float.
     pub fn get_float(&self, key: &str) -> Result<Option<Spanned<f64>>, std::num::ParseFloatError> {
         self.get(key)
             .map(|value| {
@@ -222,6 +234,10 @@ impl Section {
             .transpose()
     }
 
+    /// Get boolean value.
+    ///
+    /// # Errors
+    /// Errors if the value is not a valid boolean.
     pub fn get_bool(&self, key: &str) -> Result<Option<Spanned<bool>>, InvalidBooleanError> {
         self.get(key)
             .map(|value| {
@@ -603,6 +619,10 @@ macro_rules! impl_section_proxy {
                 self.section.get(&key)
             }
 
+            // Check for the existence of a given option in a given section.
+            //
+            // If the specified `section` is None or an empty string, DEFAULT is
+            // assumed. If the specified `section` does not exist, returns False."""
             pub fn has_option<Q>(&self, key: &Q) -> bool
             where
                 Q: ?Sized + Hash + Equivalent<Spanned<String>> + Lowercase,
@@ -617,6 +637,10 @@ macro_rules! impl_section_proxy {
                     .is_some()
             }
 
+            /// Get floating point value.
+            ///
+            /// # Errors
+            /// Errors if the value is not a valid integer.
             pub fn get_int(
                 self,
                 key: &str,
@@ -631,6 +655,10 @@ macro_rules! impl_section_proxy {
                     .transpose()
             }
 
+            /// Get floating point value.
+            ///
+            /// # Errors
+            /// Errors if the value is not a valid float.
             pub fn get_float(
                 self,
                 key: &str,
@@ -645,6 +673,10 @@ macro_rules! impl_section_proxy {
                     .transpose()
             }
 
+            /// Get boolean value.
+            ///
+            /// # Errors
+            /// Errors if the value is not a valid boolean.
             pub fn get_bool(self, key: &str) -> Result<Option<Spanned<bool>>, InvalidBooleanError> {
                 self.get(key)
                     .map(|value| {
@@ -671,16 +703,22 @@ impl std::fmt::Display for SectionProxy<'_> {
 pub struct NoSectionError(pub String);
 
 impl Value {
+    /// Check if the value is empty.
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.sections.is_empty() && self.defaults.is_empty()
     }
 
+    /// Replace a section a new configuration value from initial default values.
+    ///
+    /// # Returns
+    /// The old section if present, an empty section otherwise.
     pub fn replace_section(&mut self, key: Spanned<String>, section: Section) -> Section {
         let old_section = self.sections.entry(key).or_default();
         std::mem::replace(old_section, section)
     }
 
+    /// Create a new configuration value from initial default values.
     #[must_use]
     pub fn with_defaults(defaults: Section) -> Self {
         Self {
@@ -689,6 +727,7 @@ impl Value {
         }
     }
 
+    /// Add a new section with a given name.
     pub fn add_section(
         &mut self,
         name: Spanned<String>,
@@ -700,33 +739,40 @@ impl Value {
         self.sections.insert(name, section)
     }
 
+    /// Remove a section by name.
     pub fn remove_section(&mut self, name: &str) -> Option<Section> {
         self.sections.shift_remove(name)
     }
 
+    /// Remove an option from a section by name.
     pub fn remove_option(&mut self, section: &str, option: &str) -> Option<Spanned<String>> {
         self.section_mut(section)
             .and_then(|mut section| section.remove_option(option))
     }
 
+    /// Get a reference to the default values of the configuration.
     #[must_use]
     pub fn defaults(&self) -> &Section {
         &self.defaults
     }
 
+    /// Get a mutable reference to the default values of the configuration.
     pub fn defaults_mut(&mut self) -> &mut Section {
         &mut self.defaults
     }
 
+    /// Checks if a section exists.
     #[must_use]
     pub fn has_section(&self, section: &str) -> bool {
         self.section(section).is_some()
     }
 
+    /// Iterator over all section names
     pub fn section_names(&self) -> impl Iterator<Item = &Spanned<String>> {
         self.sections.keys()
     }
 
+    /// Clear all sections.
     pub fn clear(&mut self) {
         self.sections.clear();
     }
@@ -739,6 +785,7 @@ impl Value {
         self.remove_section(&first_section_name)
     }
 
+    /// Get reference to section by name.
     #[must_use]
     pub fn section<'a>(&'a self, name: &str) -> Option<SectionProxy<'a>> {
         self.sections.get(name).map(|section| SectionProxy {
@@ -747,10 +794,11 @@ impl Value {
         })
     }
 
+    /// Get mutable reference to section by name.
     pub fn section_mut(&mut self, name: &str) -> Option<SectionProxyMut<'_>> {
         self.sections.get_mut(name).map(|section| SectionProxyMut {
             section,
-            defaults: Some(&mut self.defaults),
+            defaults: Some(&self.defaults),
         })
     }
 
@@ -764,12 +812,17 @@ impl Value {
             .is_some_and(|section| section.has_option(option))
     }
 
+    /// Get option names.
     pub fn options<'a>(&'a self, section: &str) -> Keys<'a> {
         self.section(section)
             .map(SectionProxy::options)
             .unwrap_or_default()
     }
 
+    /// Set a value.
+    ///
+    /// # Errors
+    /// When no section with the given name exists.
     pub fn set(
         &mut self,
         section: &str,
@@ -782,12 +835,14 @@ impl Value {
         Ok(section.set(option, value))
     }
 
+    /// Get value by name.
     #[must_use]
     pub fn get<'a>(&'a self, section: &str, option: &'a str) -> Option<&'a Spanned<String>> {
         self.section(section)
             .and_then(|section| section.get_owned(option))
     }
 
+    /// Get mutable value by name.
     pub fn get_mut<'a>(
         &'a mut self,
         section: &str,
@@ -796,6 +851,11 @@ impl Value {
         self.section_mut(section)
             .and_then(move |section| section.get_mut_owned(option))
     }
+
+    /// Get integer value.
+    ///
+    /// # Errors
+    /// Errors if the value is not a valid integer.
     pub fn get_int(
         &self,
         section: &str,
@@ -806,6 +866,10 @@ impl Value {
             .transpose()
     }
 
+    /// Get floating point value.
+    ///
+    /// # Errors
+    /// Errors if the value is not a valid float.
     pub fn get_float(
         &self,
         section: &str,
@@ -816,6 +880,10 @@ impl Value {
             .transpose()
     }
 
+    /// Get boolean value.
+    ///
+    /// # Errors
+    /// Errors if the value is not a valid boolean.
     pub fn get_bool(
         &self,
         section: &str,
@@ -828,7 +896,7 @@ impl Value {
 }
 
 fn get_section<'a>(
-    current_section: &Option<Spanned<String>>,
+    current_section: Option<&Spanned<String>>,
     out: &'a mut Value,
 ) -> &'a mut Section {
     match current_section {
@@ -837,8 +905,8 @@ fn get_section<'a>(
     }
 }
 
-fn finalize_continuation_value(current_option: &Option<Spanned<String>>, section: &mut Section) {
-    if let Some(current_value) = current_option.as_ref().and_then(|op| section.get_mut(op)) {
+fn finalize_continuation_value(current_option: Option<&Spanned<String>>, section: &mut Section) {
+    if let Some(current_value) = current_option.as_ref().and_then(|op| section.get_mut(*op)) {
         // finalize previous
         crate::parse::trim_trailing_whitespace(&mut current_value.inner, &mut current_value.span);
     }
@@ -877,8 +945,8 @@ pub fn from_reader<F: PartialEq + Copy>(
                     span,
                 } => {
                     // finalize previous
-                    let section = get_section(&current_section, &mut out);
-                    finalize_continuation_value(&current_option, section);
+                    let section = get_section(current_section.as_ref(), &mut out);
+                    finalize_continuation_value(current_option.as_ref(), section);
 
                     // start new section
                     let section_name = Spanned::new(span, name);
@@ -891,7 +959,7 @@ pub fn from_reader<F: PartialEq + Copy>(
                     inner: Item::ContinuationValue { value },
                     span,
                 } => {
-                    let section = get_section(&current_section, &mut out);
+                    let section = get_section(current_section.as_ref(), &mut out);
                     if let Some(current_value) =
                         current_option.as_ref().and_then(|op| section.get_mut(op))
                     {
@@ -904,8 +972,8 @@ pub fn from_reader<F: PartialEq + Copy>(
                     inner: Item::Value { mut key, value },
                     ..
                 } => {
-                    let section = get_section(&current_section, &mut out);
-                    finalize_continuation_value(&current_option, section);
+                    let section = get_section(current_section.as_ref(), &mut out);
+                    finalize_continuation_value(current_option.as_ref(), section);
 
                     key.inner = key.inner.to_lowercase();
                     current_option = Some(key.clone());
@@ -930,8 +998,8 @@ pub fn from_reader<F: PartialEq + Copy>(
         }
     }
 
-    let section = get_section(&current_section, &mut out);
-    finalize_continuation_value(&current_option, section);
+    let section = get_section(current_section.as_ref(), &mut out);
+    finalize_continuation_value(current_option.as_ref(), section);
     Ok(out)
 }
 
