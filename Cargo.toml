@@ -1,22 +1,28 @@
 [package]
 name = "serde-ini-spanned"
-version = "0.2.0"
-description = "INI configuration file deserialization similar to Python's configparser"
-publish = true
+version = "0.0.1"
+edition = "2024"
 
-edition.workspace = true
-authors.workspace = true
-license-file.workspace = true
-documentation.workspace = true
-homepage.workspace = true
-repository.workspace = true
-readme.workspace = true
-categories.workspace = true
-exclude.workspace = true
+publish = true
+authors = ["romnn <contact@romnn.com>"]
+description = "INI configuration file deserialization similar to Python's configparser"
+license-file = "LICENSE"
+readme = "README.md"
+homepage = "https://github.com/romnn/serde-ini-spanned"
+documentation = "https://docs.rs/serde-ini-spanned"
+repository = "https://github.com/romnn/serde-ini-spanned"
+categories = ["encoding", "parser-implementations"]
 keywords = [
+  "parser",
   "ini",
   "cfg",
   "serde"
+]
+exclude = [
+  ".typos.toml",
+  ".ignore",
+  ".bumpversion.toml",
+  "taskfile.yaml",
 ]
 
 [lib]
@@ -24,7 +30,7 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 serde = "1"
-thiserror.workspace = true
+thiserror = "2"
 indexmap = { version = "2", features = ["serde"] }
 
 # manual parsing
@@ -40,8 +46,8 @@ codespan-reporting = "0"
 # nom = "7"
 
 [dev-dependencies]
-color-eyre.workspace = true
-similar-asserts.workspace = true
+color-eyre = "0"
+similar-asserts = "1"
 indoc = "2"
 unindent = "0"
 
