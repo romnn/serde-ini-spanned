@@ -326,19 +326,6 @@ impl<B> Parser<B> {
     }
 }
 
-// fn parse_comment(span: &Span, items: &mut Vec<Spanned<Item>>) -> Result<(), Error> {
-//     span.start += 1;
-//     let byte_span = to_byte_span(&line, span.clone()).add_offset(offset);
-//     println!("\t=> comment: {line}");
-//     items.push(Spanned::new(
-//         byte_span,
-//         Item::Comment {
-//             text: line[span].into(),
-//         },
-//     ));
-//     Ok(())
-// }
-
 impl<B> Parse for Parser<B>
 where
     B: std::io::BufRead,
