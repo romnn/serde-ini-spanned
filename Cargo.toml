@@ -23,6 +23,9 @@ exclude = [
   ".ignore",
   ".bumpversion.toml",
   "taskfile.yaml",
+  "experiments/",
+  "test-data",
+  "tests",
 ]
 
 [lib]
