@@ -1,8 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SchemaStore/schemastore/refs/heads/master/src/schemas/json/github-workflow.json
 name: release
 on:
   push:
     tags:
       - "*"
+
+env:
+  MISE_GITHUB_TOKEN: ${{ github.token }}
+  MISE_AUTO_INSTALL: "0"
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   tests:
@@ -11,9 +20,13 @@ jobs:
   publish-crate:
     runs-on: ubuntu-24.04
     needs: [tests]
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Publish crates
         uses: romnn/publish-crates@main
         with:
