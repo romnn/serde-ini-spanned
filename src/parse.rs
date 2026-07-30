@@ -359,7 +359,6 @@ where
                 }
                 state.current_section.clear();
                 state.option_name = None;
-                println!("\t=> section: {}", &line[span.clone()]);
 
                 items.push(Spanned::new(
                     byte_span,
@@ -377,7 +376,6 @@ where
             // comment
             span.start += 1;
             let byte_span = to_byte_span(&line, span.clone()).add_offset(offset);
-            println!("\t=> comment: {line}");
             items.push(Spanned::new(
                 byte_span,
                 Item::Comment {
@@ -405,7 +403,6 @@ where
                 let comment_span = compact_span(&line, comment_span);
 
                 let value = &line[comment_span.clone()];
-                println!("\t=> comment: {value}");
                 let byte_span = to_byte_span(&line, comment_span).add_offset(offset);
 
                 span.end = span.start + comment_pos;
@@ -431,12 +428,9 @@ where
                 is_continue =
                     !state.current_section.is_empty() && current_indent_level > state.indent_level;
 
-                println!("\t=> continuation?: {is_continue}");
-
                 if is_continue {
                     let continuation_span = compact_span(&line, span.clone());
                     let value = &line[continuation_span.clone()];
-                    println!("\t=> continuation: {value}");
 
                     items.push(Spanned::new(
                         to_byte_span(&line, continuation_span.clone()).add_offset(offset),
@@ -449,7 +443,6 @@ where
 
             if is_empty {
                 if self.config.allow_empty_lines_in_values {
-                    println!("\t=> empty (continuation)");
                     items.push(Spanned::new(
                         to_byte_span(&line, span.clone()).add_offset(offset),
                         Item::ContinuationValue { value: line },
@@ -493,7 +486,6 @@ where
 
                 state.indent_level = key_span.start;
 
-                println!("\t=> key={key} value={value}");
                 state.option_name = Some(key.to_string());
                 state
                     .current_section
@@ -1972,7 +1964,7 @@ mod tests {
         crate::tests::init();
         let config = include_str!("../test-data/cfgparser.1.ini");
         let config = parse(config, Options::default(), &Printer::default()).0?;
-        println!("{}", &config);
+        println!("{config}");
         Ok(())
     }
 
@@ -1991,7 +1983,7 @@ mod tests {
             ..Options::default()
         };
         let config = parse(config, options, &Printer::default()).0?;
-        println!("{}", &config);
+        println!("{config}");
 
         sim_assert_eq!(
             config.section_names().collect::<Vec<_>>(),
@@ -2044,7 +2036,7 @@ mod tests {
             ..Options::default()
         };
         let config = parse(config, options, &Printer::default()).0?;
-        println!("{}", &config);
+        println!("{config}");
 
         sim_assert_eq!(
             config.section_names().collect::<Vec<_>>(),
