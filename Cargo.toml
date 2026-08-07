@@ -28,13 +28,9 @@ exclude = [
   "mise.lock",
   "cooldown.toml",
   "clippy.toml",
-  "experiments/",
   "test-data",
   "tests",
 ]
-
-[lib]
-crate-type = ["cdylib", "lib"]
 
 [lints]
 workspace = true
@@ -81,28 +77,25 @@ map_unwrap_or = "allow"
 assigning_clones = "allow"
 struct_excessive_bools = "allow"
 
+[features]
+default = ["codespan"]
+# Render problems as `codespan-reporting` diagnostics. `codespan-reporting` is a 0.x
+# dependency that appears in the public API, so it is a feature; it is on by default
+# because rendering diagnostics is what this crate exists for.
+codespan = ["dep:codespan-reporting"]
+
 [dependencies]
-serde = "1"
 thiserror = "2"
-indexmap = { version = "2", features = ["serde"] }
+indexmap = "2"
 
 # manual parsing
 aho-corasick = "1"
 
 # diagnostics
-codespan-reporting = "0"
-
-# # optional: pest parser
-# pest = "2"
-# pest_derive = "2"
-# # optional: nom parser
-# nom = "7"
+codespan-reporting = { version = "0.12", optional = true }
 
 [dev-dependencies]
 color-eyre = "0"
 similar-asserts = "1"
 indoc = "2"
 unindent = "0"
-
-# pest-test = "0"
-# pest-test-gen = "0"
